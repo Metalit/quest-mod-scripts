@@ -1,0 +1,26 @@
+{
+  "$schema": "https://raw.githubusercontent.com/QuestPackageManager/QPM.Package/refs/heads/main/qpm.shared.schema.json",
+  "config": {
+    "version": "0.4.0",
+    "sharedDir": "shared",
+    "dependenciesDir": "extern",
+    "info": {
+      "name": "mod-scripts",
+      "id": "mod-scripts",
+      "version": "1.0.0",
+      "url": "https://github.com/Metalit/quest-mod-scripts",
+      "additionalData": {
+        "headersOnly": true
+      }
+    },
+    "workspace": {
+      "scripts": {},
+      "ndk": "^29.0.14206865",
+      "qmodIncludeDirs": [],
+      "qmodIncludeFiles": [],
+      "qmodOutput": null
+    },
+    "dependencies": []
+  },
+  "restoredDependencies": []
+}
