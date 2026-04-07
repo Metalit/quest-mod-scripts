@@ -23,7 +23,14 @@ def kill_app(app_id: str) -> None:
 
 
 def start_unity_app(app_id: str) -> None:
-    run("adb shell am start", app_id + "/com.unity3d.player.UnityPlayerActivity")
+    activities = run(
+        "adb shell cmd package resolve-activity --brief", app_id, capture=True
+    ).splitlines()
+    activity = next(
+        (activity for activity in activities if "UnityPlayer" in activity),
+        f"{app_id}/com.unity3d.player.UnityPlayerActivity",
+    )
+    run("adb shell am start", activity)
 
 
 __all__ = ["log", "get_pid", "kill_app", "start_unity_app"]
