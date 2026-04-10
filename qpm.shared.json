@@ -10,7 +10,9 @@
       "version": "1.0.0",
       "url": "https://github.com/Metalit/quest-mod-scripts",
       "additionalData": {
-        "headersOnly": true
+        "headersOnly": true,
+        "cmake": false,
+        "branchName": "version/v1_0_0"
       }
     },
     "workspace": {
