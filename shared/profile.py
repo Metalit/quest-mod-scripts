@@ -48,6 +48,7 @@ def run_profiler(args: ProfileArgs, ndk_path: Path):
         "--ndk_path",
         ndk_path.absolute(),
         '-r "-g -e cpu-cycles"',
+        raise_interrupt=False,
     )
 
 
