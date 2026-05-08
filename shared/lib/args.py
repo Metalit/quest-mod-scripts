@@ -2,6 +2,7 @@ from lib.util import log
 
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from dataclasses import dataclass
+from os import environ
 from typing import (
     Any,
     Dict,
@@ -150,8 +151,8 @@ class parse(Generic[T]):
         if issubclass(type, Exception):
             if self.title:
                 log("Error running script:", self.title)
-            log(type.__name__ + ":", *value.args)
-            return True
+            log(type.__name__ + ":", value)
+            return "QSCRIPT_DBG" not in environ
         return False
 
 
