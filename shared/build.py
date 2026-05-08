@@ -4,6 +4,7 @@ from lib.util import log
 
 import os
 from pathlib import Path
+from platform import system
 from stat import S_IWRITE
 from shutil import rmtree, move
 from typing import Any, Callable
@@ -79,16 +80,20 @@ def build_java(args: BuildArgs):
     move_temp = move_file.parent / "build.gradle" if move_file else Path()
     if move_file:
         move(move_file, move_temp)
+    gradlew = "gradlew" if system() == "Windows" else "./gradlew"
     try:
-        run("gradlew", "build", wd=args.java_dir)
+        run(gradlew, "build", wd=args.java_dir)
     finally:
         if move_file:
             move(move_temp, move_file)
-    with ZipFile(
-        args.java_dir / "app/build/outputs/apk/release/app-release-unsigned.apk",
-        "r",
-    ) as apk:
-        apk.extract("classes.dex", args.java_out)
+    if args.java_out.exists():
+        args.java_out.unlink()
+    # Use release folder as temp dir for classes.dex, since we can't rename it with extract()
+    release_folder = args.java_dir / "app/build/outputs/apk/release"
+    with ZipFile(release_folder / "app-release-unsigned.apk", "r") as apk:
+        apk.extract("classes.dex", release_folder)
+    move(release_folder / "classes.dex", args.java_out)
+    # Make sure last modified date is correct
     args.java_out.touch()
 
 
