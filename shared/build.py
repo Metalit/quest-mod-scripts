@@ -2,8 +2,11 @@ from lib.args import arg, parse
 from lib.run import run
 from lib.util import log
 
+import os
 from pathlib import Path
+from stat import S_IWRITE
 from shutil import rmtree, move
+from typing import Any, Callable
 from zipfile import ZipFile
 
 CMAKE_DEFINE_PREFIX = "_bs_build_def_"
@@ -52,10 +55,22 @@ class BuildArgs:
     )
 
 
+def rmtree_safe(path: Path):
+    def try_chmod(func: Callable[..., Any], path: str, exc: BaseException):
+        if isinstance(exc, PermissionError) and not os.access(path, os.W_OK):
+            os.chmod(path, S_IWRITE)
+            func(path)
+        else:
+            raise
+
+    if path.exists():
+        rmtree(path, onexc=try_chmod)
+
+
 def clean(args: BuildArgs):
-    rmtree(args.build_dir)
+    rmtree_safe(args.build_dir)
     if args.java_dir:
-        rmtree(args.java_dir / "app/build")
+        rmtree_safe(args.java_dir / "app/build")
 
 
 def build_java(args: BuildArgs):
