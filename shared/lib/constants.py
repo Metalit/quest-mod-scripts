@@ -4,7 +4,6 @@ from json import loads
 from os import getenv
 from pathlib import Path
 
-
 PROJECT_PATH = Path.cwd()
 MOD_JSON_PATH = PROJECT_PATH / "mod.json"
 MOD_TEMPLATE_PATH = PROJECT_PATH / "mod.template.json"

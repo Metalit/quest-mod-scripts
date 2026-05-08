@@ -15,7 +15,6 @@ from typing import (
     overload,
 )
 
-
 T = TypeVar("T")
 
 _order = 0

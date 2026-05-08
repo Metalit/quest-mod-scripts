@@ -10,7 +10,6 @@ from sys import stdout
 from tempfile import TemporaryDirectory
 from typing import List, TextIO, Tuple
 
-
 # logcat, paperlog, order
 LEVELS = {
     "debug": ("D", "D", 1),

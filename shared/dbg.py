@@ -9,7 +9,6 @@ from re import search, compile as re_comp
 from tempfile import TemporaryDirectory
 from typing import Optional
 
-
 MODIFIED_RE = re_comp(r"(?<=Modify: )\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?=.\d{9})")
 MODIFIED_FMT = "%Y-%m-%d %H:%M:%S"
 TRACE_HEADER = "*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***"

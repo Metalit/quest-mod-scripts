@@ -6,7 +6,6 @@ from pathlib import Path
 from shutil import rmtree, move
 from zipfile import ZipFile
 
-
 CMAKE_DEFINE_PREFIX = "_bs_build_def_"
 
 
