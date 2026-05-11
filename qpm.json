@@ -6,7 +6,7 @@
   "info": {
     "name": "mod-scripts",
     "id": "mod-scripts",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "url": "https://github.com/Metalit/quest-mod-scripts",
     "additionalData": {
       "headersOnly": true
