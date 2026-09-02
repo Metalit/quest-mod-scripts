@@ -14,7 +14,7 @@ class Runner:
         stdin: Optional[str],
         capture: bool,
         silent: bool,
-        raise_interrupt: bool,
+        interrupt_ok: bool,
     ) -> None:
         self.command = " ".join((str(arg) for arg in args))
         self.wd = wd
@@ -22,7 +22,7 @@ class Runner:
         self.capture = capture
         self.silent = silent
         self.code = 0
-        self.raise_interrupt = False
+        self.interrupt_ok = interrupt_ok
         self.interrupt = False
 
     def write_stdin(self, process: Popen[str]):
@@ -57,7 +57,7 @@ class Runner:
         finally:
             process.terminate()
             signal(SIGINT, SIG_DFL)
-        if self.interrupt and self.raise_interrupt:
+        if self.interrupt and not self.interrupt_ok:
             raise KeyboardInterrupt
         elif self.interrupt:
             self.code = 0
@@ -72,7 +72,7 @@ def run(
     stdin: Optional[str] = None,
     silent: bool = False,
     yield_capture: Literal[True],
-    raise_interrupt: bool = True,
+    interrupt_ok: bool = False,
 ) -> Generator[str, None, None]: ...
 
 
@@ -84,7 +84,7 @@ def run(
     silent: bool = False,
     capture: Literal[True],
     fail_ok: Literal[True],
-    raise_interrupt: bool = True,
+    interrupt_ok: bool = False,
 ) -> Tuple[int, str]: ...
 
 
@@ -96,7 +96,7 @@ def run(
     silent: bool = False,
     capture: Literal[False],
     fail_ok: Literal[True],
-    raise_interrupt: bool = True,
+    interrupt_ok: bool = False,
 ) -> int: ...
 
 
@@ -107,7 +107,7 @@ def run(
     stdin: Optional[str] = None,
     silent: bool = False,
     fail_ok: Literal[True],
-    raise_interrupt: bool = True,
+    interrupt_ok: bool = False,
 ) -> int: ...
 
 
@@ -119,7 +119,7 @@ def run(
     silent: bool = False,
     capture: bool = False,
     fail_ok: Literal[False],
-    raise_interrupt: bool = True,
+    interrupt_ok: bool = False,
 ) -> str: ...
 
 
@@ -130,7 +130,7 @@ def run(
     stdin: Optional[str] = None,
     silent: bool = False,
     capture: bool = False,
-    raise_interrupt: bool = True,
+    interrupt_ok: bool = False,
 ) -> str: ...
 
 
@@ -142,7 +142,7 @@ def run(
     yield_capture: bool = False,
     capture: bool = False,
     fail_ok: bool = False,
-    raise_interrupt: bool = True,
+    interrupt_ok: bool = False,
 ) -> Union[Generator[str, None, None], int, str, Tuple[int, str]]:
     process = Runner(
         *args,
@@ -150,7 +150,7 @@ def run(
         stdin=stdin,
         capture=capture or yield_capture,
         silent=silent,
-        raise_interrupt=raise_interrupt,
+        interrupt_ok=interrupt_ok,
     )
     if yield_capture:
         return process.__iter__()

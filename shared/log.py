@@ -140,7 +140,11 @@ def run_with_output(args: LogArgs, output: TextIO):
         tag = "*" if args.all_mods else (args.tag or "")
         msg_filter = f"{tag}:{logcat_level}"
         for line in run(
-            "adb logcat -v time *:S", pid_filter, msg_filter, yield_capture=True
+            "adb logcat -v time *:S",
+            pid_filter,
+            msg_filter,
+            yield_capture=True,
+            interrupt_ok=True,
         ):
             process_log_message(args, trims, line.strip(), output)
     else:
