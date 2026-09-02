@@ -76,9 +76,11 @@ class Trims:
     line: bool = False
 
 
-def parse_message(message: str, args: LogArgs):
+def parse_message(message: str, global_file: bool, args: LogArgs):
     regex = (
-        LOGCAT_RE if args.realtime else (PAPER_RE if args.all_mods else PAPER_SINGLE_RE)
+        LOGCAT_RE
+        if args.realtime
+        else (PAPER_RE if args.all_mods or global_file else PAPER_SINGLE_RE)
     )
     matched = match(regex, message)
     if not matched:
@@ -86,7 +88,7 @@ def parse_message(message: str, args: LogArgs):
     groups: Tuple[str, ...] = matched.groups()
     if args.realtime:
         time, level, tag, line, text = groups
-    elif args.all_mods:
+    elif args.all_mods or global_file:
         level, time, tag, line, text = groups
     else:
         level, time, line, text = groups
@@ -95,10 +97,12 @@ def parse_message(message: str, args: LogArgs):
     return time, levels_dict[level], tag, line, text
 
 
-def process_log_message(args: LogArgs, trims: Trims, message: str, output: TextIO):
+def process_log_message(
+    args: LogArgs, trims: Trims, message: str, output: TextIO, global_file=False
+):
     if args.raw:
         print(message, file=output)
-    elif parsed := parse_message(message, args):
+    elif parsed := parse_message(message, global_file, args):
         time, level, tag, line, text = parsed
         if args.fix_paths and not trims.line:
             if matched := match(LINE_RE, line):
@@ -128,44 +132,69 @@ def construct_trims(args: LogArgs) -> Trims:
     return trims
 
 
-def run_with_output(args: LogArgs, output: TextIO):
-    logcat_level, _, min_level_idx = LEVELS[args.min_level]
+def run_logcat(args: LogArgs, output: TextIO):
+    logcat_level = LEVELS[args.min_level][0]
     trims = construct_trims(args)
-    if args.realtime:
-        pid_filter = ""
-        if (pid := get_pid(args.app_id)) is not None:
-            pid_filter = f"--pid {pid}"
-        if args.clear_log:
-            run("adb logcat -c")
-        tag = "*" if args.all_mods else (args.tag or "")
-        msg_filter = f"{tag}:{logcat_level}"
-        for line in run(
-            "adb logcat -v time *:S",
-            pid_filter,
-            msg_filter,
-            yield_capture=True,
-            interrupt_ok=True,
-        ):
-            process_log_message(args, trims, line.strip(), output)
-    else:
-        search = "Paperlog.log" if args.all_mods else (args.tag or "")
-        logs_path = get_mod_data(args.app_id, "logs2")
+    pid_filter = ""
+    if (pid := get_pid(args.app_id)) is not None:
+        pid_filter = f"--pid {pid}"
+    if args.clear_log:
+        run("adb logcat -c")
+    tag = "*" if args.all_mods else (args.tag or "")
+    msg_filter = f"{tag}:{logcat_level}"
+    for line in run(
+        "adb logcat -v time *:S",
+        pid_filter,
+        msg_filter,
+        yield_capture=True,
+        interrupt_ok=True,
+    ):
+        process_log_message(args, trims, line.strip(), output)
+
+
+def get_paperlog_file(args: LogArgs) -> Tuple[str, bool]:
+    logs_path = get_mod_data(args.app_id, "logs2")
+    log_file = "Paperlog.log"
+    filter_tag = False
+    if not args.all_mods:
+        search = args.tag or ""
         all_logs = run("adb shell ls", logs_path, capture=True).strip().splitlines()
-        for log_file in all_logs:
-            if search.lower() in log_file.lower():
-                args.tag = log_file.strip(".log")
-                with TemporaryDirectory("r") as d:
-                    f = Path(d) / "log.log"
-                    run("adb pull", f"{logs_path}/{log_file}", f.absolute())
-                    for line in f.read_text().splitlines():
-                        level = PAPER_LEVELS[line[0]]
-                        if LEVELS[level][2] < min_level_idx:
-                            continue
-                        process_log_message(args, trims, line.strip(), output)
+        for candidate in all_logs:
+            if search.lower() in candidate.lower():
+                log_file = candidate
+                args.tag = candidate.strip(".log")
                 break
         else:
-            log("Error: log for", search, "not found")
-            exit(1)
+            filter_tag = True
+    return (f"{logs_path}/{log_file}", filter_tag)
+
+
+def run_paperlog(args: LogArgs, output: TextIO):
+    min_level_idx = LEVELS[args.min_level][2]
+    trims = construct_trims(args)
+    log_file, filter_tag = get_paperlog_file(args)
+    with TemporaryDirectory("r") as d:
+        f = Path(d) / "log.log"
+        run("adb pull", log_file, f.absolute())
+        for line in f.read_text().splitlines():
+            level = PAPER_LEVELS[line[0]]
+            if LEVELS[level][2] < min_level_idx:
+                continue
+            if filter_tag and args.tag:
+                matched = match(PAPER_RE, line.strip())
+                if not matched:
+                    continue
+                line_tag = matched.groups()[2]
+                if args.tag not in line_tag:
+                    continue
+            process_log_message(args, trims, line.strip(), output, filter_tag)
+
+
+def run_with_output(args: LogArgs, output: TextIO):
+    if args.realtime:
+        run_logcat(args, output)
+    else:
+        run_paperlog(args, output)
 
 
 def get_file_choice(files: List[str]) -> int:
