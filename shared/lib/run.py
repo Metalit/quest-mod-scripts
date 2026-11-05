@@ -6,6 +6,13 @@ from threading import Thread
 from typing import Any, Generator, Literal, Optional, Tuple, Union, overload
 
 
+def _format_arg(arg: Any) -> str:
+    # commands run through the shell, so quote it to avoid issues from spaces
+    if isinstance(arg, Path):
+        return f'"{arg}"'
+    return str(arg)
+
+
 class Runner:
     def __init__(
         self,
@@ -16,7 +23,7 @@ class Runner:
         silent: bool,
         interrupt_ok: bool,
     ) -> None:
-        self.command = " ".join((str(arg) for arg in args))
+        self.command = " ".join((_format_arg(arg) for arg in args))
         self.wd = wd
         self.stdin = stdin
         self.capture = capture
